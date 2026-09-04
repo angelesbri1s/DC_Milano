@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Datacenter_Milano</title>
+  
+  <!-- MapLibre GL JS (CSS e JS) -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
+
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+    /* Stile per il Popup al passaggio del mouse */
+    .maplibregl-popup-content {
+      font-family: sans-serif;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.4;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+  const apiKey = '1bI1DajGl7YOwEr5jkeb';
+  
+  // Sostituisci con l'URL dello stile MapTiler che hai personalizzato
+  // Es: 'https://api.maptiler.com/maps/YOUR-STYLE-ID/style.json?key=' + apiKey
+  const mapStyle = `https://api.maptiler.com/maps/503ed6f9-c236-485c-9ee9-175727871dd5/style.json?key=1bI1DajGl7YOwEr5jkeb`;
+
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: mapStyle,
+    center: [9.184541, 45.462383], // Coordinate iniziali [Longitudine, Latitudine]
+    zoom: 9
+  });
+
+  // Istanza del popup per l'hover
+  const popup = new maplibregl.Popup({
+    closeButton: false,
+    closeOnClick: false
+  });
+
+  map.on('load', () => {
+    // 1. Caricamento del file GeoJSON locale
+    map.addSource('datacenter-source', {
+      type: 'geojson',
+      data: './Datacenter_2026sett3.geojson' // Accerta che l'estensione sia presente se necessario
+    });
+
+    // 2. Layer per i Poligoni (se presenti nel GeoJSON)
+    map.addLayer({
+      id: 'datacenter-polygons',
+      type: 'fill',
+      source: 'datacenter-source',
+      filter: ['==', '$type', 'Polygon'],
+      paint: {
+        'fill-color': '#ff4500',
+        'fill-opacity': 0.2
+      }
+    });
+
+    // Contorno dei Poligoni
+    map.addLayer({
+      id: 'datacenter-polygons-outline',
+      type: 'line',
+      source: 'datacenter-source',
+      filter: ['==', '$type', 'Polygon'],
+      paint: {
+        'line-color': '#ff4500',
+        'line-width': 1
+      }
+    });
+
+    // 3. Layer per i Punti (se presenti nel GeoJSON)
+    map.addLayer({
+      id: 'datacenter-points',
+      type: 'circle',
+      source: 'datacenter-source',
+      filter: ['==', '$type', 'Point'],
+      paint: {
+        'circle-radius': 4,
+        'circle-color': '#ff4500',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
+      }
+    });
+
+    // Funzione per mostrare le informazioni al passaggio del mouse
+    function handleHover(e) {
+      map.getCanvas().style.cursor = 'pointer';
+
+      const coordinates = e.lngLat;
+      const properties = e.features[0].properties;
+
+      // Costruisce la tabella HTML dinamica con le proprietà dell'elemento
+      let content = '<strong>Info Datacenter</strong><br>';
+      for (const [key, value] of Object.entries(properties)) {
+        content += `<b>${key}:</b>${value}<br>`;
+      }
+
+      popup.setLngLat(coordinates).setHTML(content).addTo(map);
+    }
+
+    function handleMouseLeave() {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+    }
+
+    // Eventi Hover sui layer
+    ['datacenter-points', 'datacenter-polygons'].forEach(layerId => {
+      map.on('mousemove', layerId, handleHover);
+      map.on('mouseleave', layerId, handleMouseLeave);
+    });
+  });
+</script>
+
+</body>
+</html>
