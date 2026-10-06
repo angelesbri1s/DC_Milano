@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Datacenter_Milano</title>
-  
+
   <!-- MapLibre GL JS (CSS e JS) -->
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
@@ -23,51 +23,70 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     }
 
+    /* Search bar */
     #search-box {
-  position: absolute; top: 10px; left: 10px; z-index: 2;
-  width: 280px; font-family: sans-serif;
-}
-#search-input {
-  width: 100%; box-sizing: border-box;
-  padding: 10px 12px; font-size: 14px;
-  border: 0; border-radius: 6px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.25);
-}
-#search-results {
-  list-style: none; margin: 4px 0 0; padding: 0;
-  background: #fff; border-radius: 6px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.25);
-  max-height: 260px; overflow-y: auto;
-}
-#search-results li {
-  padding: 8px 12px; font-size: 13px; cursor: pointer;
-}
-#search-results li:hover { background: #f0f0f0; }
+      position: absolute; top: 10px; left: 10px; z-index: 2;
+      width: 280px; font-family: sans-serif;
+    }
+    #search-input {
+      width: 100%; box-sizing: border-box;
+      padding: 10px 12px; font-size: 14px;
+      border: 0; border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+    #search-results {
+      list-style: none; margin: 4px 0 0; padding: 0;
+      background: #fff; border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
+      max-height: 260px; overflow-y: auto;
+    }
+    #search-results:empty { display: none; }
+    #search-results li {
+      padding: 8px 12px; font-size: 13px; cursor: pointer;
+    }
+    #search-results li:hover { background: #f0f0f0; }
 
+    /* Selettore stile mappa */
+    #switcher {
+      position: absolute; top: 60px; left: 10px; z-index: 1;
+      background: #fff; padding: 6px; border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.2); font-family: sans-serif;
+    }
+    #switcher button {
+      border: 0; padding: 6px 10px; margin: 0 2px;
+      cursor: pointer; border-radius: 4px; background: #eee;
+    }
+    #switcher button:hover { background: #ddd; }
   </style>
 </head>
 <body>
 
 <div id="map"></div>
 
+<!-- Search bar -->
 <div id="search-box">
   <input id="search-input" type="text" placeholder="Cerca un luogo..." autocomplete="off">
   <ul id="search-results"></ul>
 </div>
 
+<!-- Selettore stile -->
+<div id="switcher">
+  <button onclick="map.setStyle(styles.satellite)">Satellite</button>
+  <button onclick="map.setStyle(styles.originale)">Mappa</button>
+</div>
+
 <script>
   const apiKey = '1bI1DajGl7YOwEr5jkeb';
-  
-  // Sostituisci con l'URL dello stile MapTiler che hai personalizzato
-  // Es: 'https://api.maptiler.com/maps/YOUR-STYLE-ID/style.json?key=' + apiKey
-  const mapStyle = `https://api.maptiler.com/maps/hybrid/style.json?key=${apiKey}`;
- 
-  /*const mapStyle = `https://api.maptiler.com/maps/503ed6f9-c236-485c-9ee9-175727871dd5/style.json?key=1bI1DajGl7YOwEr5jkeb`;*/
+
+  const styles = {
+    originale: `https://api.maptiler.com/maps/503ed6f9-c236-485c-9ee9-175727871dd5/style.json?key=${apiKey}`,
+    satellite: `https://api.maptiler.com/maps/hybrid/style.json?key=${apiKey}`
+  };
 
   const map = new maplibregl.Map({
     container: 'map',
-    style: mapStyle,
-    center: [9.184541, 45.462383], // Coordinate iniziali [Longitudine, Latitudine]
+    style: styles.satellite,
+    center: [9.184541, 45.462383], // [Longitudine, Latitudine]
     zoom: 9
   });
 
@@ -77,101 +96,110 @@
     closeOnClick: false
   });
 
-  map.on('load', () => {
-    // 1. Caricamento del file GeoJSON locale
+  // Aggiunge sorgente e layer dei datacenter
+  function addDatacenterLayers() {
     map.addSource('datacenter-source', {
       type: 'geojson',
-      data: './Datacenter_2026sett3.geojson' // Accerta che l'estensione sia presente se necessario
+      data: './Datacenter_2026sett3.geojson'
     });
 
-    // 2. Layer per i Poligoni (se presenti nel GeoJSON)
     map.addLayer({
       id: 'datacenter-polygons',
       type: 'fill',
       source: 'datacenter-source',
       filter: ['==', '$type', 'Polygon'],
-      paint: {
-        'fill-color': '#ff4500',
-        'fill-opacity': 0.2
-      }
+      paint: { 'fill-color': '#ff4500', 'fill-opacity': 0.35 }
     });
 
-    // Contorno dei Poligoni
     map.addLayer({
       id: 'datacenter-polygons-outline',
       type: 'line',
       source: 'datacenter-source',
       filter: ['==', '$type', 'Polygon'],
-      paint: {
-        'line-color': '#ff4500',
-        'line-width': 1
-      }
+      paint: { 'line-color': '#ff4500', 'line-width': 1.5 }
     });
 
-    // 3. Layer per i Punti (se presenti nel GeoJSON)
     map.addLayer({
       id: 'datacenter-points',
       type: 'circle',
       source: 'datacenter-source',
       filter: ['==', '$type', 'Point'],
       paint: {
-        'circle-radius': 4,
+        'circle-radius': 5,
         'circle-color': '#ff4500',
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff'
       }
     });
+  }
 
-    // Funzione per mostrare le informazioni al passaggio del mouse
-    function handleHover(e) {
-      map.getCanvas().style.cursor = 'pointer';
-
-      const coordinates = e.lngLat;
-      const properties = e.features[0].properties;
-
-      // Costruisce la tabella HTML dinamica con le proprietà dell'elemento
-      let content = '<strong>Info Datacenter</strong><br>';
-      for (const [key, value] of Object.entries(properties)) {
-        content += `<b>${key}:</b>${value}<br>`;
-      }
-
-      popup.setLngLat(coordinates).setHTML(content).addTo(map);
+  // Hover: registrato una volta sola
+  function handleHover(e) {
+    map.getCanvas().style.cursor = 'pointer';
+    const properties = e.features[0].properties;
+    let content = '<strong>Info Datacenter</strong><br>';
+    for (const [key, value] of Object.entries(properties)) {
+      content += `<b>${key}:</b> ${value}<br>`;
     }
+    popup.setLngLat(e.lngLat).setHTML(content).addTo(map);
+  }
 
-    function handleMouseLeave() {
-      map.getCanvas().style.cursor = '';
-      popup.remove();
-    }
+  function handleMouseLeave() {
+    map.getCanvas().style.cursor = '';
+    popup.remove();
+  }
 
-    // Eventi Hover sui layer
-    ['datacenter-points', 'datacenter-polygons'].forEach(layerId => {
-      map.on('mousemove', layerId, handleHover);
-      map.on('mouseleave', layerId, handleMouseLeave);
-    });
+  ['datacenter-points', 'datacenter-polygons'].forEach(layerId => {
+    map.on('mousemove', layerId, handleHover);
+    map.on('mouseleave', layerId, handleMouseLeave);
   });
 
-      // Eventi Hover sui layer
-    ['datacenter-points', 'datacenter-polygons'].forEach(layerId => {
-      map.on('mousemove', layerId, handleHover);
-      map.on('mouseleave', layerId, handleMouseLeave);
-    });
-  });   // <-- questa è la chiusura di map.on('load', ...)
+  // Si attiva al primo caricamento e dopo ogni cambio di stile
+  map.on('style.load', () => {
+    if (!map.getSource('datacenter-source')) addDatacenterLayers();
+  });
 
-  // ⬇️ INCOLLA QUI il codice della search bar
+  // ---- Search bar ----
   const input = document.getElementById('search-input');
   const resultsList = document.getElementById('search-results');
   let debounceTimer;
 
   input.addEventListener('input', () => {
-    ...
+    clearTimeout(debounceTimer);
+    const query = input.value.trim();
+    if (query.length < 3) { resultsList.innerHTML = ''; return; }
+
+    // Aspetta 300 ms dopo l'ultima digitazione per non fare troppe richieste
+    debounceTimer = setTimeout(async () => {
+      try {
+        const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json` +
+                    `?key=${apiKey}&language=it&country=it&limit=5`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        resultsList.innerHTML = '';
+        data.features.forEach(f => {
+          const li = document.createElement('li');
+          li.textContent = f.place_name;
+          li.addEventListener('click', () => {
+            if (f.bbox) {
+              map.fitBounds(f.bbox, { padding: 40, maxZoom: 16 });
+            } else {
+              map.flyTo({ center: f.center, zoom: 15 });
+            }
+            input.value = f.place_name;
+            resultsList.innerHTML = '';
+          });
+          resultsList.appendChild(li);
+        });
+      } catch (err) {
+        console.error('Errore nella ricerca:', err);
+      }
+    }, 300);
   });
 
+  // Chiude i risultati cliccando sulla mappa
   map.on('click', () => { resultsList.innerHTML = ''; });
-
-</script>
-</body>
-</html>
-
 </script>
 
 </body>
