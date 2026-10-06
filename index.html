@@ -33,7 +33,9 @@
   
   // Sostituisci con l'URL dello stile MapTiler che hai personalizzato
   // Es: 'https://api.maptiler.com/maps/YOUR-STYLE-ID/style.json?key=' + apiKey
-  const mapStyle = `https://api.maptiler.com/maps/503ed6f9-c236-485c-9ee9-175727871dd5/style.json?key=1bI1DajGl7YOwEr5jkeb`;
+  const mapStyle = `https://api.maptiler.com/maps/hybrid/style.json?key=${apiKey}`;
+ 
+  /*const mapStyle = `https://api.maptiler.com/maps/503ed6f9-c236-485c-9ee9-175727871dd5/style.json?key=1bI1DajGl7YOwEr5jkeb`;*/
 
   const map = new maplibregl.Map({
     container: 'map',
